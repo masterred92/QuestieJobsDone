@@ -33,8 +33,9 @@ function JD.Play(force)
   local now = GetTime()
   if not force and now - lastSound < 1 then return false end -- several quests finishing on one kill: one line
   lastSound = now
-  local ok, willPlay = pcall(PlaySoundFile, v.id, db.channel)
-  return ok and willPlay and true or false
+  -- Never over another of our voice lines (a BRBoss quote, DBM's victory sound, a BigWigs countdown).
+  if force then local ok, willPlay = pcall(PlaySoundFile, v.id, db.channel); return ok and willPlay and true or false end
+  return (ns.Hub.PlayVoice(v.id, db.channel, 2)) -- "Job's done!" is under 2 seconds
 end
 
 local REASON = { UPDATED = 2, TURNED_IN = 3, ABANDONED = 4 }
@@ -64,7 +65,11 @@ function JD.RegisterLSM()
   if lsmDone or type(LibStub) ~= "table" then return lsmDone end
   local LSM = LibStub("LibSharedMedia-3.0", true)
   if not LSM then return false end
-  for _, key in ipairs(JD.VoiceOrder) do pcall(LSM.Register, LSM, "sound", "Job's Done: " .. JD.Voices[key].label, JD.Voices[key].id) end
+  for _, key in ipairs(JD.VoiceOrder) do
+    local v = JD.Voices[key]
+    -- one LibSharedMedia entry per sound across our addons (WipeAndWin also offers "Job's done!")
+    if ns.Hub.ClaimSound(v.id, "Job's Done: " .. v.label) then pcall(LSM.Register, LSM, "sound", "Job's Done: " .. v.label, v.id) end
+  end
   lsmDone = true
   return true
 end
@@ -92,11 +97,18 @@ function JD.Hook()
   return ok
 end
 
+ns.Core.Setup({ cmd = "/jd", required = { "PlaySoundFile", "C_QuestLog.IsComplete", "C_QuestLog.GetTitleForQuestID" },
+  optional = { "Questie.API.RegisterForQuestUpdates", "Questie.API.RegisterOnReady", "LibStub" },
+  debugLines = function()
+    return { "hooked into Questie: " .. tostring(hooked), "Questie's own quest-complete sound on: " .. tostring(questieAlsoPlays()) }
+  end })
+
 SLASH_QUESTIEJOBSDONE1 = "/jobsdone"
 SLASH_QUESTIEJOBSDONE2 = "/jd"
 SlashCmdList.QUESTIEJOBSDONE = function(msg)
   msg = strtrim((msg or ""):lower())
-  if msg == "test" then JD.Play(true); say((JD.Voices[db.voice] or JD.Voices.jobsdone).label)
+  if msg == "debug" then ns.Core.PrintDebug()
+  elseif msg == "test" then JD.Play(true); say((JD.Voices[db.voice] or JD.Voices.jobsdone).label)
   elseif msg == "voice" then
     local i = 1
     for n, k in ipairs(JD.VoiceOrder) do if k == db.voice then i = n end end
@@ -106,7 +118,7 @@ SlashCmdList.QUESTIEJOBSDONE = function(msg)
   elseif msg == "mute" then db.enabled = not db.enabled; say(db.enabled and "sound on." or "sound muted.")
   elseif msg == "quiet" then db.chatLine = not db.chatLine; say(db.chatLine and "chat line on." or "chat line off.")
   else
-    say("/jd test | /jd voice (cycle) | /jd party (opt-in party line) | /jd mute | /jd quiet")
+    say("/jd test | /jd voice (cycle) | /jd party (opt-in party line) | /jd mute | /jd quiet | /jd debug")
     if not hooked then say("Questie isn't loaded, so nothing will play.") end
     if questieAlsoPlays() then say("Questie's own quest-complete sound is on, so this addon only does the chat/party lines.") end
   end

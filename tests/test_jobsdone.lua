@@ -52,4 +52,12 @@ M.check(#M.sounds == before, "quiet when Questie's own quest sound is on")
 Questie.db.profile.soundOnQuestComplete = false
 M.slash("/jd", "voice")
 M.check(ns.JD.db.voice == "ready" and M.sounds[#M.sounds][1] == 558137, "voice cycles and previews")
+-- 1.1.0: never over another of our voice lines
+KennyAddonsHub.MarkVoiceBusy(5)
+local before = #M.sounds
+QuestieJobsDone.Play()
+M.check(#M.sounds == before, "waits while another voice line plays")
+M.advance(6)
+QuestieJobsDone.Play()
+M.check(#M.sounds == before + 1, "plays once the line is over")
 M.done("QuestieJobsDone")

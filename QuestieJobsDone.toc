@@ -2,9 +2,10 @@
 ## Title: Questie: Job's Done
 ## Notes: The peon's "Job's done!" when Questie sees a quest finished, plus an opt-in party line. Needs Questie.
 ## Author: Kenny
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: QuestieJobsDoneDB
 ## Dependencies: Questie
+## X-Hosts: Questie
 ## X-License: MIT
 ## IconTexture: Interface\AddOns\QuestieJobsDone\media\icon
 ## X-Category: Quests & Leveling
@@ -12,4 +13,8 @@
 # X-Curse-Project-ID: (added when the CurseForge project exists)
 # X-Wago-ID: (added when the Wago project exists)
 
+Libs\KennyShared\Compat.lua
+Libs\KennyShared\Core.lua
+Libs\KennyShared\Hub.lua
+Locales\enUS.lua
 JobsDone.lua
